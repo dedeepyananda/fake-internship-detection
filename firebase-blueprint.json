@@ -1,0 +1,28 @@
+{
+  "entities": {
+    "scans": {
+      "title": "Scan History",
+      "description": "History of analyzed posters",
+      "type": "object",
+      "properties": {
+        "verdict": { "type": "string", "enum": ["FAKE", "REAL"] },
+        "confidence": { "type": "number" },
+        "explanation": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "userId": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "extractedText": { "type": "string" },
+        "redFlags": { "type": "array", "items": { "type": "string" } },
+        "suspiciousPhrases": { "type": "array", "items": { "type": "string" } },
+        "grammarScore": { "type": "number" }
+      },
+      "required": ["verdict", "confidence", "explanation", "timestamp", "userId", "imageUrl", "extractedText", "redFlags", "suspiciousPhrases", "grammarScore"]
+    }
+  },
+  "firestore": {
+    "/scans/{scanId}": {
+      "schema": "scans",
+      "description": "Collection of poster scan results"
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "TrustPoster.AI - Fake Internship Detector",
+  "description": "Professional forensic AI toolkit to detect recruitment fraud and fake internship posters using neural pattern matching.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

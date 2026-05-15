@@ -1,0 +1,63 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Phase 3: Primitive Definitions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Phase 4: Drafting the "Fortress" Rules
+    match /scans/{scanId} {
+      // Validation Blueprint (Pillar 2)
+      function isValidScan(data) {
+        return data.keys().hasAll(['verdict', 'confidence', 'explanation', 'timestamp', 'userId', 'imageUrl', 'extractedText', 'redFlags', 'suspiciousPhrases', 'grammarScore'])
+          && data.keys().size() == 10
+          && data.verdict in ['FAKE', 'REAL']
+          && data.confidence is number && data.confidence >= 0 && data.confidence <= 100
+          && data.explanation is string && data.explanation.size() <= 10000
+          && data.userId == request.auth.uid
+          && (data.timestamp == request.time || data.timestamp is timestamp)
+          && data.imageUrl is string && data.imageUrl.size() <= 2000000
+          && data.extractedText is string && data.extractedText.size() <= 20000
+          && data.redFlags is list && data.redFlags.size() <= 50
+          && data.suspiciousPhrases is list && data.suspiciousPhrases.size() <= 50
+          && data.grammarScore is number && data.grammarScore >= 0 && data.grammarScore <= 100;
+      }
+
+      // Pillar 3: ID Hardening (Applied to create, get, delete)
+      // Note: list query does not use scanId check.
+      allow create: if isSignedIn() && isValidId(scanId) && isValidScan(incoming());
+      
+      allow get: if isSignedIn() && isValidId(scanId) && isOwner(existing().userId);
+      
+      // Pillar 8: Secure List Queries
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      
+      allow delete: if isSignedIn() && isValidId(scanId) && isOwner(existing().userId);
+      
+      // Pillar 4: Tiered Identity Logic (Immutable after creation)
+      allow update: if false;
+    }
+  }
+}
